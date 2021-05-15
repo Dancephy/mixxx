@@ -227,34 +227,34 @@ void Track::importMetadata(
     }
 }
 
-void Track::mergeImportedMetadata(
+bool Track::mergeImportedMetadata(
         const mixxx::TrackMetadata& importedMetadata) {
     QMutexLocker lock(&m_qMutex);
-    if (m_record.mergeImportedMetadata(importedMetadata)) {
-        markDirtyAndUnlock(&lock);
+    if (!m_record.mergeImportedMetadata(importedMetadata)) {
+        // Not modified
+        return false;
     }
+    markDirtyAndUnlock(&lock);
+    // Modified
+    return true;
 }
 
-void Track::readTrackMetadata(
-        mixxx::TrackMetadata* pTrackMetadata,
+mixxx::TrackMetadata Track::getMetadata(
         bool* pMetadataSynchronized) const {
-    DEBUG_ASSERT(pTrackMetadata);
-    QMutexLocker lock(&m_qMutex);
-    *pTrackMetadata = m_record.getMetadata();
+    const QMutexLocker locked(&m_qMutex);
     if (pMetadataSynchronized) {
         *pMetadataSynchronized = m_record.getMetadataSynchronized();
     }
+    return m_record.getMetadata();
 }
 
-void Track::readTrackRecord(
-        mixxx::TrackRecord* pTrackRecord,
+mixxx::TrackRecord Track::getRecord(
         bool* pDirty) const {
-    DEBUG_ASSERT(pTrackRecord);
-    QMutexLocker lock(&m_qMutex);
-    *pTrackRecord = m_record;
+    const QMutexLocker locked(&m_qMutex);
     if (pDirty) {
         *pDirty = m_bDirty;
     }
+    return m_record;
 }
 
 mixxx::ReplayGain Track::getReplayGain() const {
@@ -297,8 +297,9 @@ bool Track::trySetBpmWhileLocked(double bpmValue) {
     return false;
 }
 
-QString Track::getBpmText() const {
-    return QString("%1").arg(getBpm(), 3,'f',1);
+double Track::getBpm() const {
+    const QMutexLocker lock(&m_qMutex);
+    return getBpmWhileLocked().getValue();
 }
 
 bool Track::trySetBpm(double bpmValue) {
@@ -453,19 +454,18 @@ void Track::setDuration(double duration) {
     setDuration(mixxx::Duration::fromSeconds(duration));
 }
 
-double Track::getDuration(DurationRounding rounding) const {
+double Track::getDuration() const {
     QMutexLocker lock(&m_qMutex);
-    const auto durationSeconds =
-            m_record.getMetadata().getStreamInfo().getDuration().toDoubleSeconds();
-    switch (rounding) {
-    case DurationRounding::SECONDS:
-        return std::round(durationSeconds);
-    default:
-        return durationSeconds;
-    }
+    return m_record.getMetadata().getStreamInfo().getDuration().toDoubleSeconds();
 }
 
-QString Track::getDurationText(mixxx::Duration::Precision precision) const {
+int Track::getDurationSecondsInt() const {
+    QMutexLocker lock(&m_qMutex);
+    return static_cast<int>(m_record.getMetadata().getDurationSecondsRounded());
+}
+
+QString Track::getDurationText(
+        mixxx::Duration::Precision precision) const {
     QMutexLocker lock(&m_qMutex);
     return m_record.getMetadata().getDurationText(precision);
 }

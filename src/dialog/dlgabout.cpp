@@ -1,6 +1,8 @@
 #include "dialog/dlgabout.h"
 
+#include <QDesktopServices>
 #include <QFile>
+#include <QLocale>
 
 #include "defs_urls.h"
 #include "moc_dlgabout.cpp"
@@ -17,6 +19,8 @@ DlgAbout::DlgAbout(QWidget* parent) : QDialog(parent), Ui::DlgAboutDlg() {
             QStringLiteral(" ") + VersionStore::version());
     git_version_label->setText(VersionStore::gitVersion());
     platform_label->setText(VersionStore::platform());
+    QLocale locale;
+    date_label->setText(locale.toString(VersionStore::date().toLocalTime(), QLocale::LongFormat));
 
     QFile licenseFile(":/LICENSE");
     if (!licenseFile.open(QIODevice::ReadOnly)) {
@@ -57,20 +61,11 @@ DlgAbout::DlgAbout(QWidget* parent) : QDialog(parent), Ui::DlgAboutDlg() {
     recentContributors
             << "Tuukka Pasanen"
             << "Nino MP"
-            << "Nico Schl&ouml;mer"
             << "Ferran Pujol Camins"
-            << "Joan Marc&egrave; i Igual"
             << "Josep Maria Antol&iacute;n Segura"
             << "Daniel Poelzleithner"
             << "St&eacute;phane Lepin"
-            << "Stefan Weber"
-            << "Kshitij Gupta"
-            << "Matthew Nicholson"
-            << "Jamie Gifford"
             << "luzpaz"
-            << "Sebastian Reu&szlig;e"
-            << "Pawe&#322; Goli&#324;ski"
-            << "beenisss"
             << "Bernd Binder"
             << "Pradyuman"
             << "Nik Martin"
@@ -104,7 +99,14 @@ DlgAbout::DlgAbout(QWidget* parent) : QDialog(parent), Ui::DlgAboutDlg() {
             << "Frank Breitling"
             << "Christian"
             << "Geraldo Nascimento"
-            << "Albert Aparicio";
+            << "Albert Aparicio"
+            << "Pierre Le Gall"
+            << "David Baker"
+            << "Justin Kourie"
+            << "Waylon Robertson"
+            << "Al Hadebe"
+            << "Javier Vilarroig"
+            << "Ball&oacute; Gy&ouml;rgy";
 
     QStringList specialThanks;
     specialThanks
@@ -315,7 +317,16 @@ DlgAbout::DlgAbout(QWidget* parent) : QDialog(parent), Ui::DlgAboutDlg() {
             << "Johan Lasperas"
             << "Olaf Hering"
             << "Eduardo Acero"
-            << "Thomas Jarosch";
+            << "Thomas Jarosch"
+            << "Nico Schl&ouml;mer"
+            << "Joan Marc&egrave; i Igual"
+            << "Stefan Weber"
+            << "Kshitij Gupta"
+            << "Matthew Nicholson"
+            << "Jamie Gifford"
+            << "Sebastian Reu&szlig;e"
+            << "Pawe&#322; Goli&#324;ski"
+            << "beenisss";
 
     QString sectionTemplate = QString(
         "<p align=\"center\"><b>%1</b></p><p align=\"center\">%2</p>");
@@ -339,6 +350,19 @@ DlgAbout::DlgAbout(QWidget* parent) : QDialog(parent), Ui::DlgAboutDlg() {
                                     .name(),
                             MIXXX_WEBSITE_URL,
                             tr("Official Website")));
+    if (std::rand() % 6) {
+        if (!Color::isDimColor(palette().text().color())) {
+            btnDonate->setIcon(QIcon(":/images/heart_icon_light.svg"));
+        } else {
+            btnDonate->setIcon(QIcon(":/images/heart_icon_dark.svg"));
+        }
+    } else {
+        btnDonate->setIcon(QIcon(":/images/heart_icon_rainbow.svg"));
+    }
+    btnDonate->setText(tr("Donate"));
+    connect(btnDonate, &QPushButton::clicked, this, [] {
+        QDesktopServices::openUrl(QUrl(MIXXX_DONATE_URL));
+    });
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &DlgAbout::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &DlgAbout::reject);
